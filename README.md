@@ -36,13 +36,16 @@ The oracle agent reads user activity data from Linera Indexer and calculates rep
 ### 1. Deploy Contract
 
 ```bash
-cd examples/passport-nft
+# Build the contract
 cargo build --release --target wasm32-unknown-unknown
 
+# Publish and create application
 linera publish-and-create \
   target/wasm32-unknown-unknown/release/passport_nft_contract.wasm \
   target/wasm32-unknown-unknown/release/passport_nft_service.wasm \
   --json-parameters '{"admin": "User:YOUR_ADMIN_ADDRESS"}'
+
+# Save the application ID from the output
 ```
 
 ### 2. Start Services
