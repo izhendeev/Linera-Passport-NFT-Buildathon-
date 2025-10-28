@@ -1,0 +1,13 @@
+# Linera Passport NFT Oracle Configuration
+# Copy this file to config.toml and update with your values
+
+linera_rpc_endpoint = "http://localhost:8080"
+graphql_endpoint = "http://localhost:8080/chains/YOUR_CHAIN_ID/applications/YOUR_APP_ID"
+indexer_endpoint = "http://localhost:8000/operations"
+application_id = "YOUR_APP_ID"
+operation_chain_id = "YOUR_CHAIN_ID"
+wallet_path = "/home/user/.config/linera/wallet.json"
+rules_path = "config/achievements.json"
+
+# Optional: Add other chain IDs for cross-chain aggregation
+cross_chain_ids = []

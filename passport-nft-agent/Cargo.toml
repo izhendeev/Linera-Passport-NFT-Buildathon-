@@ -1,0 +1,64 @@
+[package]
+name = "passport-nft-agent"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[[bin]]
+name = "passport_oracle"
+path = "src/bin/passport_oracle.rs"
+
+[[bin]]
+name = "quick_score_api"
+path = "src/bin/quick_score_api.rs"
+
+[[bin]]
+name = "mint_api"
+path = "src/bin/mint_api.rs"
+
+[dependencies]
+anyhow = "1.0"
+async-trait = "0.1"
+axum = "0.7"
+clap = { version = "4.5", features = ["derive", "env"] }
+config = "0.14"
+futures = "0.3"
+hex = "0.4"
+jsonschema = "0.18"
+once_cell = "1.19"
+reqwest = { version = "0.11.24", default-features = false, features = [
+    "json",
+    "rustls-tls",
+] }
+sha3 = "0.10"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+time = "0.3"
+tokio = { version = "1.45", features = ["macros", "rt-multi-thread", "signal", "time", "fs"] }
+tower-http = { version = "0.5", features = ["cors"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter", "json"] }
+uuid = { version = "1.10", features = ["v4"] }
+rand = "0.8"
+graphql_client = "0.13"
+
+bcs = "0.1"
+
+linera-base = { path = "../../linera-base" }
+linera-client = { path = "../../linera-client", default-features = false, features = ["fs"] }
+linera-rpc = { path = "../../linera-rpc" }
+linera-indexer-graphql-client = { path = "../../linera-indexer/graphql-client" }
+linera-execution = { path = "../../linera-execution", default-features = false }
+linera-persistent = { path = "../../linera-persistent", default-features = false, features = ["fs"] }
+passport-nft = { path = "../passport-nft" }
+alloy-primitives = { workspace = true }
+
+[features]
+default = ["openai"]
+openai = ["async-openai"]
+candle = []
+
+[dependencies.async-openai]
+version = "0.21"
+optional = true

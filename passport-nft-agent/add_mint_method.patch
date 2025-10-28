@@ -1,0 +1,109 @@
+--- src/updater.rs.orig
++++ src/updater.rs
+@@ -16,7 +16,7 @@
+ };
+ use linera_client::wallet::Wallet;
+ use linera_persistent::{File as PersistentFile, Persist};
+-use passport_nft::{PassportOperation, UpdateArgs};
++use passport_nft::{MintArgs, PassportOperation, UpdateArgs};
+
+ use crate::chain_client::ChainClient;
+
+@@ -147,6 +147,93 @@
+
+         Ok(())
+     }
++
++    /// Submit a mint operation to the blockchain
++    /// Similar to submit_update but for minting new passports
++    pub async fn submit_mint(
++        &self,
++        chain_id: ChainId,
++        args: MintArgs,
++    ) -> Result<()> {
++        let request_id = Uuid::new_v4();
++
++        tracing::info!(
++            request_id = %request_id,
++            chain_id = %chain_id,
++            application_id = %self.application_id,
++            token_id = ?args.token_id,
++            metadata_uri = %args.metadata_uri,
++            "Submitting mint operation to blockchain"
++        );
++
++        // Use GraphQL mutation to submit mint operation
++        let graphql_endpoint = format!(
++            "{}/chains/{}/applications/{}",
++            self.linera_rpc_endpoint, chain_id, self.application_id
++        );
++
++        // Convert token_id bytes to array format for GraphQL
++        let token_id_array = args.token_id.id.clone();
++
++        // Build GraphQL mint mutation
++        let mutation = format!(
++            r#"
++            mutation {{
++                mint(
++                    tokenId: {{ id: {:?} }}
++                    metadataUri: "{}"
++                    imageUri: "{}"
++                    contentHash: "{}"
++                )
++            }}
++            "#,
++            token_id_array,
++            args.metadata_uri,
++            args.image_uri,
++            args.content_hash
++        );
++
++        let request = serde_json::json!({
++            "query": mutation
++        });
++
++        let response = self
++            .http
++            .post(&graphql_endpoint)
++            .json(&request)
++            .send()
++            .await
++            .context("failed to send GraphQL mint request")?;
++
++        let status = response.status();
++        let body = response.text().await?;
++
++        if !status.is_success() {
++            anyhow::bail!("GraphQL mint request failed with status {}: {}", status, body);
++        }
++
++        #[derive(Deserialize)]
++        struct GraphqlResponse {
++            data: Option<Value>,
++            errors: Option<Vec<GraphqlError>>,
++        }
++
++        #[derive(Deserialize)]
++        struct GraphqlError {
++            message: String,
++        }
++
++        let result: GraphqlResponse = serde_json::from_str(&body)
++            .context("failed to parse GraphQL response")?;
++
++        if let Some(errors) = result.errors {
++            let messages: Vec<_> = errors.iter().map(|e| e.message.as_str()).collect();
++            anyhow::bail!("GraphQL mint errors: {}", messages.join(", "));
++        }
++
++        tracing::info!(
++            request_id = %request_id,
++            "Mint operation submitted successfully"
++        );
++
++        Ok(())
++    }
+ }
+
+ pub struct WalletSigner {

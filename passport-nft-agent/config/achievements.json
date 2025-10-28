@@ -1,0 +1,60 @@
+{
+  "achievements": [
+    {
+      "code": "early_adopter",
+      "explanation": "First 1000 users on the network",
+      "points": 50,
+      "condition": {
+        "total_supply_under": 1000
+      }
+    },
+    {
+      "code": "active_user",
+      "explanation": "Made at least 10 transactions",
+      "points": 25,
+      "condition": {
+        "total_transactions": {
+          "min_count": 10
+        }
+      }
+    },
+    {
+      "code": "power_user",
+      "explanation": "Made at least 50 transactions",
+      "points": 75,
+      "condition": {
+        "total_transactions": {
+          "min_count": 50
+        }
+      }
+    },
+    {
+      "code": "whale",
+      "explanation": "Transferred over 1000 tokens total",
+      "points": 100,
+      "condition": {
+        "system_transfer": {
+          "min_total_amount": "1000000000"
+        }
+      }
+    },
+    {
+      "code": "app_creator",
+      "explanation": "Created at least one application on Linera",
+      "points": 150,
+      "condition": {
+        "app_creation": true
+      }
+    },
+    {
+      "code": "developer",
+      "explanation": "Interacted with multiple applications",
+      "points": 100,
+      "condition": {
+        "user_operation": {
+          "min_unique_apps": 3
+        }
+      }
+    }
+  ]
+}
