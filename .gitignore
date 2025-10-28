@@ -1,0 +1,38 @@
+# Build artifacts
+/target/
+/web-frontend/node_modules/
+/web-frontend/.parcel-cache/
+/web-frontend/dist/
+
+# Private data - DO NOT COMMIT
+.env
+.env.deployment
+wallet.json
+*.db/
+indexer.db/
+
+# Backup files
+*.backup
+*.bak
+*.old
+*-old/
+*-old-*/
+web-frontend-old/
+web-frontend-old-*/
+v0-frontend/
+simple-frontend/
+new-frontend/
+backend/
+
+# Test files
+tmp-test.txt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,108 @@
+{
+  "scoring_rules": {
+    "transactions_per_point": 10,
+    "base_multiplier": 1,
+    "daily_activity_points": 10,
+    "wallet_age_points_per_day": 1
+  },
+  "achievements": [
+    {
+      "code": "CONWAY_PARTICIPANT",
+      "explanation": "Active participant in Linera Conway testnet",
+      "points": 100,
+      "condition": {
+        "user_operation": {
+          "min_count": 1
+        }
+      }
+    },
+    {
+      "code": "APP_CREATOR",
+      "explanation": "Created an application in Linera",
+      "points": 100,
+      "condition": {
+        "app_creation": true
+      }
+    },
+    {
+      "code": "MILESTONE_10",
+      "explanation": "Reached 10 transactions",
+      "points": 10,
+      "condition": {
+        "total_transactions": {
+          "min": 10
+        }
+      }
+    },
+    {
+      "code": "MILESTONE_50",
+      "explanation": "Reached 50 transactions",
+      "points": 25,
+      "condition": {
+        "total_transactions": {
+          "min": 50
+        }
+      }
+    },
+    {
+      "code": "MILESTONE_100",
+      "explanation": "Reached 100 transactions",
+      "points": 50,
+      "condition": {
+        "total_transactions": {
+          "min": 100
+        }
+      }
+    },
+    {
+      "code": "MILESTONE_500",
+      "explanation": "Reached 500 transactions",
+      "points": 100,
+      "condition": {
+        "total_transactions": {
+          "min": 500
+        }
+      }
+    },
+    {
+      "code": "DAILY_STREAK_7",
+      "explanation": "Active for 7 unique days",
+      "points": 50,
+      "condition": {
+        "unique_active_days": {
+          "min": 7
+        }
+      }
+    },
+    {
+      "code": "DAILY_STREAK_30",
+      "explanation": "Active for 30 unique days",
+      "points": 200,
+      "condition": {
+        "unique_active_days": {
+          "min": 30
+        }
+      }
+    },
+    {
+      "code": "VETERAN_30",
+      "explanation": "Wallet is 30+ days old",
+      "points": 100,
+      "condition": {
+        "wallet_age_days": {
+          "min": 30
+        }
+      }
+    },
+    {
+      "code": "VETERAN_90",
+      "explanation": "Wallet is 90+ days old",
+      "points": 300,
+      "condition": {
+        "wallet_age_days": {
+          "min": 90
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,316 @@
+#![cfg_attr(target_arch = "wasm32", no_main)]
+
+use anyhow::{bail, ensure, Context, Result};
+use linera_sdk::{
+    contract,
+    linera_base_types::WithContractAbi,
+    views::{RootView, View},
+    Contract, ContractRuntime,
+};
+
+use passport_nft::{
+    AddAchievementArgs, AddOracleArgs, IncreaseScoreArgs, MintArgs, Passport, PassportNftAbi,
+    PassportOperation, PassportState, RemoveOracleArgs, TokenId, UpdateArgs,
+};
+
+///
+pub struct PassportContract {
+    state: PassportState,
+    runtime: ContractRuntime<Self>,
+}
+
+contract!(PassportContract);
+
+impl WithContractAbi for PassportContract {
+    type Abi = PassportNftAbi;
+}
+
+impl Contract for PassportContract {
+    type Message = ();
+    type InstantiationArgument = ();
+    type Parameters = ();
+    type EventValue = ();
+
+    async fn load(runtime: ContractRuntime<Self>) -> Self {
+        match PassportState::load(runtime.root_view_storage_context()).await {
+            Ok(state) => PassportContract { state, runtime },
+            Err(error) => {
+                let message = format!("failed to load state: {error:#}");
+                log::error!("{message}");
+                panic!("{message}");
+            }
+        }
+    }
+
+    async fn instantiate(&mut self, _state: Self::InstantiationArgument) {
+        self.runtime.application_parameters();
+        
+        // SECURITY FIX: Set the first authenticated signer as admin
+        // This happens only once when application is created
+        if let Some(creator) = self.runtime.authenticated_signer() {
+            log::info!("Setting application admin to: {:?}", creator);
+            self.state.admin.set(Some(creator));
+        } else {
+            log::warn!("Application instantiated without authenticated signer - no admin set");
+        }
+    }
+
+    async fn execute_operation(&mut self, operation: Self::Operation) -> Self::Response {
+        if let Err(error) = self.try_execute_operation(operation).await {
+            let message = format!("operation failed: {error:#}");
+            log::error!("{message}");
+            panic!("{message}");
+        }
+    }
+
+    async fn execute_message(&mut self, _message: Self::Message) {}
+
+    async fn store(mut self) {
+        if let Err(error) = self.state.save().await {
+            let message = format!("failed to save state: {error:#}");
+            log::error!("{message}");
+            panic!("{message}");
+        }
+    }
+}
+
+impl PassportContract {
+    async fn try_execute_operation(&mut self, operation: PassportOperation) -> Result<()> {
+        match operation {
+            PassportOperation::Mint(args) => self.mint(args).await,
+            PassportOperation::AddAchievement(args) => self.add_achievement(args).await,
+            PassportOperation::IncreaseScore(args) => self.increase_score(args).await,
+            PassportOperation::UpdateAchievements(args) => self.update_achievements(args).await,
+            PassportOperation::AddOracle(args) => self.add_oracle(args).await,
+            PassportOperation::RemoveOracle(args) => self.remove_oracle(args).await,
+        }
+    }
+
+    async fn mint(&mut self, args: MintArgs) -> Result<()> {
+        let Some(owner) = self.runtime.authenticated_signer() else {
+            bail!("mint requires an authenticated owner");
+        };
+        let token_exists = self
+            .state
+            .passports
+            .contains_key(&args.token_id)
+            .await
+            .context("failed to check existing passport")?;
+        ensure!(!token_exists, "passport already exists");
+        let owner_has_passport = self
+            .state
+            .owner_index
+            .contains_key(&owner)
+            .await
+            .context("failed to check owner index")?;
+        ensure!(!owner_has_passport, "owner already has a passport");
+        validate_uris(&args.metadata_uri, &args.image_uri, &args.content_hash)?;
+
+        let owner_chain = self.runtime.chain_id();
+
+        let passport = Passport {
+            token_id: args.token_id.clone(),
+            owner,
+            created_at: self.runtime.system_time(),
+            owner_chain,
+            metadata_uri: args.metadata_uri,
+            image_uri: args.image_uri,
+            content_hash: args.content_hash,
+            achievements: Vec::new(),
+            score: 0,
+        };
+
+        self.state
+            .passports
+            .insert(&args.token_id, passport)
+            .context("failed to store passport")?;
+        self.state
+            .owner_index
+            .insert(&owner, args.token_id.clone())
+            .context("failed to update owner index")?;
+
+        let total_supply = self.state.total_supply.get_mut();
+        *total_supply += 1;
+        Ok(())
+    }
+
+    async fn mutate_passport<F>(&mut self, token_id: TokenId, mutator: F) -> Result<()>
+    where
+        F: FnOnce(&mut Passport) -> Result<()>,
+    {
+        let chain_id = self.runtime.chain_id();
+        let passport = self
+            .state
+            .passports
+            .get_mut(&token_id)
+            .await
+            .context("failed to load passport")?
+            .context("passport not found")?;
+
+        ensure!(
+            passport.owner_chain == chain_id,
+            "passport anchored on different chain"
+        );
+
+        ensure!(
+            Some(passport.owner) == self.runtime.authenticated_signer(),
+            "only owner may mutate passport"
+        );
+
+        mutator(passport)
+    }
+
+    async fn add_achievement(&mut self, args: AddAchievementArgs) -> Result<()> {
+        ensure!(
+            args.achievement.len() <= 256,
+            "achievement text exceeds 256 chars"
+        );
+        self.mutate_passport(args.token_id, |passport| {
+            passport.achievements.push(args.achievement);
+            Ok(())
+        })
+        .await
+    }
+
+    async fn increase_score(&mut self, args: IncreaseScoreArgs) -> Result<()> {
+        ensure!(args.amount > 0, "score increment must be positive");
+        self.mutate_passport(args.token_id, |passport| {
+            passport.score = passport
+                .score
+                .checked_add(args.amount)
+                .context("score overflow")?;
+            Ok(())
+        })
+        .await
+    }
+
+    async fn update_achievements(&mut self, args: UpdateArgs) -> Result<()> {
+        // CRITICAL FIX #1: Проверка авторизации оракула
+        let Some(signer) = self.runtime.authenticated_signer() else {
+            bail!("update_achievements requires authentication");
+        };
+
+        let is_authorized = self
+            .state
+            .authorized_oracles
+            .contains(&signer)
+            .await
+            .context("failed to check oracle authorization")?;
+
+        ensure!(
+            is_authorized,
+            "only authorized oracles can update achievements"
+        );
+
+        // CRITICAL FIX #2: Проверка лимита достижений
+        ensure!(
+            args.new_achievements.len() <= 100,
+            "too many achievements in single update"
+        );
+
+        for achievement in &args.new_achievements {
+            ensure!(
+                achievement.len() <= 256,
+                "achievement text exceeds 256 chars"
+            );
+        }
+
+        // Загрузить паспорт без проверки владельца (оракул не владелец)
+        let chain_id = self.runtime.chain_id();
+        let passport = self
+            .state
+            .passports
+            .get_mut(&args.token_id)
+            .await
+            .context("failed to load passport")?
+            .context("passport not found")?;
+
+        ensure!(
+            passport.owner_chain == chain_id,
+            "passport anchored on different chain"
+        );
+
+        // CRITICAL FIX #3: Проверка общего количества достижений
+        let total_achievements = passport.achievements.len() + args.new_achievements.len();
+        ensure!(
+            total_achievements <= 500,
+            "total achievements limit (500) exceeded"
+        );
+
+        // Обновить достижения
+        passport.achievements.extend(args.new_achievements.clone());
+
+        // Увеличить скор
+        if args.score_increase > 0 {
+            passport.score = passport
+                .score
+                .checked_add(args.score_increase)
+                .context("score overflow")?;
+        }
+
+        Ok(())
+    }
+
+    async fn add_oracle(&mut self, args: AddOracleArgs) -> Result<()> {
+        // SECURITY FIX: Only admin can add oracles
+        let Some(signer) = self.runtime.authenticated_signer() else {
+            bail!("add_oracle requires authentication");
+        };
+        
+        let admin = self.state.admin.get();
+        ensure!(
+            admin.as_ref() == Some(&signer),
+            "only application admin can add oracles"
+        );
+
+        self.state
+            .authorized_oracles
+            .insert(&args.oracle)
+            .context("failed to add oracle")?;
+        
+        log::info!("Admin {:?} added oracle: {:?}", signer, args.oracle);
+        Ok(())
+    }
+
+
+    async fn remove_oracle(&mut self, args: RemoveOracleArgs) -> Result<()> {
+        // SECURITY FIX: Only admin can remove oracles
+        let Some(signer) = self.runtime.authenticated_signer() else {
+            bail!("remove_oracle requires authentication");
+        };
+        
+        let admin = self.state.admin.get();
+        ensure!(
+            admin.as_ref() == Some(&signer),
+            "only application admin can remove oracles"
+        );
+
+        self.state
+            .authorized_oracles
+            .remove(&args.oracle)
+            .context("failed to remove oracle")?;
+        
+        log::info!("Admin {:?} removed oracle: {:?}", signer, args.oracle);
+        Ok(())
+    }
+}
+
+fn validate_uris(metadata_uri: &str, image_uri: &str, content_hash: &str) -> Result<()> {
+    ensure!(
+        metadata_uri.len() <= 256,
+        "metadata_uri must be at most 256 characters"
+    );
+    ensure!(
+        image_uri.len() <= 256,
+        "image_uri must be at most 256 characters"
+    );
+    ensure!(
+        content_hash.len() <= 256,
+        "content_hash must be at most 256 characters"
+    );
+    ensure!(
+        !metadata_uri.is_empty() && !image_uri.is_empty() && !content_hash.is_empty(),
+        "URIs and content hash must be non-empty"
+    );
+    Ok(())
+}

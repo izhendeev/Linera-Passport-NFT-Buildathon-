@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linera Passport NFT - Buildathon Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #2a2a2a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: #1a1a1a;
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 32px;
+            max-width: 650px;
+            width: 100%;
+            box-shadow: 0 20px 80px rgba(0,0,0,0.5);
+            border: 1px solid #444;
+        }
+
+        h1 {
+            color: #fff;
+            text-align: center;
+            margin-bottom: 6px;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            color: #a0a0a0;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .config-info {
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 16px;
+            font-size: 11px;
+            color: #888;
+            font-family: 'Courier New', monospace;
+        }
+
+        .config-info div {
+            margin-bottom: 6px;
+            word-break: break-all;
+        }
+
+        .config-info div:last-child {
+            margin-bottom: 0;
+        }
+
+        .config-info code {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .error {
+            background: #dc2626;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: 0 8px 24px rgba(220, 38, 38, 0.3);
+        }
+
+        .passport-card {
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .passport-header {
+            color: #fff;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 18px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #444;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .passport-header::before {
+            content: '🛂';
+            font-size: 28px;
+        }
+
+        .passport-info {
+            margin-bottom: 14px;
+        }
+
+        .passport-label {
+            color: #888;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .passport-value {
+            color: #fff;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            line-height: 1.5;
+        }
+
+        .score-wrapper {
+            background: #dc2626;
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+            margin: 16px 0;
+            box-shadow: 0 8px 24px rgba(220, 38, 38, 0.4);
+        }
+
+        .score {
+            font-size: 48px;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            font-family: system-ui;
+        }
+
+        .score-label {
+            color: rgba(255,255,255,0.9);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 6px;
+            font-weight: 600;
+        }
+
+        .achievements {
+            color: #ccc;
+            font-size: 13px;
+            max-height: 150px;
+            overflow-y: auto;
+            padding: 12px;
+            background: #111;
+            border-radius: 8px;
+            margin-top: 10px;
+            border: 1px solid #333;
+        }
+
+        .achievements::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .achievements::-webkit-scrollbar-track {
+            background: #222;
+            border-radius: 4px;
+        }
+
+        .achievements::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+
+        .achievements:empty::before {
+            content: 'No achievements yet - mint your passport and start earning!';
+            color: #666;
+            font-style: italic;
+        }
+
+        .achievement-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #333;
+            line-height: 1.5;
+        }
+
+        .achievement-item:last-child {
+            border-bottom: none;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .button-full {
+            grid-column: 1 / -1;
+        }
+
+        button {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 16px rgba(220, 38, 38, 0.4);
+            border: 1px solid #444;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(220, 38, 38, 0.6);
+            background: #b91c1c;
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #444;
+            cursor: not-allowed;
+            opacity: 0.4;
+            box-shadow: none;
+        }
+
+        button.update-btn {
+            background: #555;
+            box-shadow: 0 4px 16px rgba(85, 85, 85, 0.4);
+        }
+
+        button.update-btn:hover:not(:disabled) {
+            box-shadow: 0 8px 24px rgba(85, 85, 85, 0.6);
+            background: #666;
+        }
+
+        .loading {
+            text-align: center;
+            color: #aaa;
+            padding: 20px;
+            font-style: italic;
+        }
+
+        .status {
+            text-align: center;
+            color: #999;
+            margin-top: 24px;
+            font-size: 13px;
+            padding: 12px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .no-passport {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .no-passport-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .no-passport-text {
+            color: #888;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .no-passport-hint {
+            color: #666;
+            font-size: 13px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .loading-pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛂 Linera Passport NFT</h1>
+        <p class="subtitle">Buildathon Edition</p>
+
+        <div class="config-info">
+            <div><strong>GraphQL:</strong> <code id="endpoint-display">Loading...</code></div>
+            <div><strong>Quick Score API:</strong> <code id="score-api-display">Loading...</code></div>
+            <div><strong>Owner:</strong> <code id="owner-display">Loading...</code></div>
+        </div>
+
+        <div id="error-container"></div>
+
+        <div class="passport-card">
+            <div class="passport-header">Your Passport</div>
+
+            <div id="passport-content">
+                <div class="no-passport">
+                    <div class="no-passport-icon">🎫</div>
+                    <div class="no-passport-text">No passport minted yet</div>
+                    <div class="no-passport-hint">Click the MINT button below to create your passport</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="buttons">
+            <button id="mint-btn" class="button-full" onclick="mintPassport()">🎨 Mint Passport</button>
+            <button id="update-btn" class="update-btn" onclick="updateScore()" disabled>🔄 Update Score</button>
+            <button id="ai-btn" onclick="alertAIFeature()" disabled>🤖 AI Score</button>
+        </div>
+
+        <div class="status" id="status">Ready to mint your passport</div>
+    </div>
+
+    <script>
+        // =====================================================
+        // CONFIGURATION
+        // =====================================================
+        const params = new URLSearchParams(window.location.search);
+        const CHAIN_ID = params.get('chainId') || params.get('chain') || 'f7ebbdd68ad4fd2daf192575ad10c27bd7089d5e0a30facaf507f9bc22b9c6fe';
+        const APP_ID = params.get('app') || params.get('appId') || 'b139121af898c9bbb6dca05a7efde3ef396eeefe271650bb5659692613d4d463';
+        const OWNER = params.get('owner') || '';
+        const PORT = params.get('port') || '8080';
+        const SCORE_API_PORT = params.get('scorePort') || '8001';
+
+        const GRAPHQL_ENDPOINT = `http://localhost:${PORT}/chains/${CHAIN_ID}/applications/${APP_ID}`;
+        const SCORE_API_ENDPOINT = `http://localhost:${SCORE_API_PORT}/quick-score`;
+
+        // Display config
+        document.getElementById('endpoint-display').textContent = GRAPHQL_ENDPOINT;
+        document.getElementById('score-api-display').textContent = SCORE_API_ENDPOINT;
+        document.getElementById('owner-display').textContent = OWNER ? (OWNER.length > 20 ? OWNER.slice(0, 12) + '...' + OWNER.slice(-10) : OWNER) : 'Not provided';
+
+        let currentPassport = null;
+
+        // =====================================================
+        // GRAPHQL HELPER
+        // =====================================================
+        async function graphqlQuery(query, variables = {}) {
+            try {
+                const response = await fetch(GRAPHQL_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, variables })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+
+                if (result.errors) {
+                    throw new Error(result.errors.map(e => e.message).join(', '));
+                }
+
+                return result.data;
+            } catch (error) {
+                console.error('GraphQL Error:', error);
+                throw error;
+            }
+        }
+
+        // =====================================================
+        // LOAD PASSPORT FROM BLOCKCHAIN
+        // =====================================================
+        async function loadPassport() {
+            if (!OWNER) {
+                showError('Owner address required. Add ?owner=YOUR_ADDRESS to URL');
+                return;
+            }
+
+            try {
+                setStatus('Loading passport from blockchain...');
+
+                const data = await graphqlQuery(`
+                    query {
+                        allPassports {
+                            tokenId { id }
+                            owner
+                            ownerChain
+                            score
+                            achievements
+                            createdAt
+                        }
+                    }
+                `);
+
+                console.log('All passports:', data.allPassports);
+
+                // Normalize owner address (remove "User:" prefix if present)
+                const normalizeAddress = (addr) => {
+                    if (!addr) return '';
+                    const lower = addr.toLowerCase();
+                    // Convert "User:abc..." to "0xabc..." or "abc..." to "0xabc..."
+                    if (lower.startsWith('user:')) {
+                        return '0x' + lower.slice(5);
+                    }
+                    if (!lower.startsWith('0x')) {
+                        return '0x' + lower;
+                    }
+                    return lower;
+                };
+
+                // Find user's passport (normalized address match)
+                const normalizedOwner = normalizeAddress(OWNER);
+                console.log('Looking for owner:', OWNER, '-> normalized:', normalizedOwner);
+
+                const userPassport = data.allPassports.find(p => {
+                    const normalizedPassportOwner = normalizeAddress(p.owner);
+                    console.log('Comparing passport owner:', p.owner, '-> normalized:', normalizedPassportOwner);
+                    return normalizedPassportOwner === normalizedOwner;
+                });
+
+                if (userPassport) {
+                    currentPassport = userPassport;
+                    await displayPassport(userPassport);
+                    document.getElementById('update-btn').disabled = false;
+                    // AI button stays disabled for now
+                    document.getElementById('mint-btn').disabled = true;
+                    setStatus('✅ Passport loaded successfully');
+                } else {
+                    showNoPassport();
+                    setStatus('No passport found. Click MINT to create one.');
+                }
+
+                clearError();
+            } catch (error) {
+                console.error('Load passport error:', error);
+                showError('Failed to load passport: ' + error.message + '. Is Linera Service running on port ' + PORT + '?');
+                setStatus('Error loading passport');
+            }
+        }
+
+        // =====================================================
+        // GET REAL SCORE FROM INDEXER
+        // =====================================================
+        async function getRealScore(owner) {
+            try {
+                console.log('=== getRealScore called ===');
+                console.log('Input owner:', owner);
+
+                // Convert "User:abc..." to "0xabc..." for Quick Score API
+                const ownerHex = owner.startsWith('User:') ? '0x' + owner.slice(5) : owner;
+                console.log('Converted to hex:', ownerHex);
+
+                const url = `${SCORE_API_ENDPOINT}?owner=${encodeURIComponent(ownerHex)}`;
+                console.log('Fetching from URL:', url);
+
+                const response = await fetch(url);
+                console.log('Response status:', response.status);
+
+                if (!response.ok) {
+                    console.warn('Score API not available (status:', response.status, '), using blockchain score');
+                    return null;
+                }
+
+                const data = await response.json();
+                console.log('Real score from indexer (parsed JSON):', data);
+                return data;
+            } catch (error) {
+                console.error('Failed to fetch real score:', error);
+                return null;
+            }
+        }
+
+        // =====================================================
+        // DISPLAY PASSPORT
+        // =====================================================
+        async function displayPassport(passport) {
+            console.log('=== displayPassport called ===');
+            console.log('Passport data:', passport);
+            console.log('Passport owner:', passport.owner);
+
+            // Get real score from indexer
+            console.log('Fetching real score from indexer...');
+            const realScoreData = await getRealScore(passport.owner);
+            console.log('Real score data received:', realScoreData);
+
+            const displayScore = realScoreData ? realScoreData.score : (passport.score || 0);
+            const displayAchievements = realScoreData ? realScoreData.achievements : (passport.achievements || []);
+
+            console.log('Display score:', displayScore);
+            console.log('Display achievements:', displayAchievements);
+
+            const content = `
+                <div class="passport-info">
+                    <div class="passport-label">Owner Address</div>
+                    <div class="passport-value">${formatAddress(passport.owner)}</div>
+                </div>
+
+                <div class="passport-info">
+                    <div class="passport-label">Token ID</div>
+                    <div class="passport-value">${formatTokenId(passport.tokenId.id)}</div>
+                </div>
+
+                <div class="score-wrapper">
+                    <div class="score">${displayScore}</div>
+                    <div class="score-label">Reputation Score</div>
+                </div>
+
+                <div class="passport-info">
+                    <div class="passport-label">Achievements (${displayAchievements.length})</div>
+                    <div class="achievements" id="achievements-list">
+                        ${displayAchievements.length > 0
+                            ? displayAchievements.map((ach, idx) => {
+                                // If achievement is from indexer (object), format it nicely
+                                if (typeof ach === 'object') {
+                                    return `<div class="achievement-item">
+                                        <strong>${ach.code}</strong>: ${ach.explanation}
+                                        ${ach.points ? ` (+${ach.points} points)` : ''}
+                                    </div>`;
+                                }
+                                // Otherwise it's a string from blockchain
+                                return `<div class="achievement-item">${ach}</div>`;
+                            }).join('')
+                            : '<div style="color: #666; font-style: italic;">No achievements yet - start interacting with the Linera network!</div>'
+                        }
+                    </div>
+                </div>
+
+                ${passport.createdAt ? `
+                <div class="passport-info">
+                    <div class="passport-label">Created At</div>
+                    <div class="passport-value">${new Date(parseInt(passport.createdAt) / 1000).toLocaleString()}</div>
+                </div>
+                ` : ''}
+            `;
+
+            document.getElementById('passport-content').innerHTML = content;
+        }
+
+        // =====================================================
+        // SHOW NO PASSPORT STATE
+        // =====================================================
+        function showNoPassport() {
+            document.getElementById('passport-content').innerHTML = `
+                <div class="no-passport">
+                    <div class="no-passport-icon">🎫</div>
+                    <div class="no-passport-text">No passport minted yet</div>
+                    <div class="no-passport-hint">Click the MINT button below to create your passport</div>
+                </div>
+            `;
+            currentPassport = null;
+            document.getElementById('mint-btn').disabled = false;
+            document.getElementById('update-btn').disabled = true;
+            document.getElementById('ai-btn').disabled = true;
+        }
+
+        // =====================================================
+        // MINT PASSPORT
+        // =====================================================
+        async function mintPassport() {
+            if (!OWNER) {
+                showError('Owner address required. Add ?owner=YOUR_ADDRESS to URL');
+                return;
+            }
+
+            try {
+                setStatus('🎨 Minting passport...');
+                disableButtons();
+
+                // Generate random token ID (16 bytes)
+                const tokenId = Array.from({length: 16}, () => Math.floor(Math.random() * 256));
+
+                // Generate content hash (32 bytes hex)
+                const contentHash = '0x' + Array.from({length: 32}, () =>
+                    Math.floor(Math.random() * 256).toString(16).padStart(2, '0')
+                ).join('');
+
+                const timestamp = Date.now();
+
+                console.log('Minting with:', {
+                    tokenId,
+                    owner: OWNER,
+                    metadataUri: `ipfs://QmPassportMeta${timestamp}`,
+                    imageUri: `ipfs://QmPassportImage${timestamp}`,
+                    contentHash
+                });
+
+                await graphqlQuery(`
+                    mutation {
+                        mint(
+                            tokenId: { id: [${tokenId.join(',')}] }
+                            metadataUri: "ipfs://QmPassportMeta${timestamp}"
+                            imageUri: "ipfs://QmPassportImage${timestamp}"
+                            contentHash: "${contentHash}"
+                        )
+                    }
+                `);
+
+                setStatus('✅ Passport minted! Waiting for blockchain confirmation...');
+
+                // Wait for blockchain to process
+                await new Promise(resolve => setTimeout(resolve, 3000));
+
+                // Reload passport
+                await loadPassport();
+            } catch (error) {
+                console.error('Mint error:', error);
+                showError('Mint failed: ' + error.message);
+                setStatus('❌ Mint failed');
+                enableButtons();
+            }
+        }
+
+        // =====================================================
+        // UPDATE SCORE (Refresh from indexer)
+        // =====================================================
+        async function updateScore() {
+            if (!currentPassport) return;
+
+            try {
+                setStatus('🔄 Updating score from indexer...');
+
+                // Get fresh score from indexer
+                const realScoreData = await getRealScore(currentPassport.owner);
+
+                if (realScoreData) {
+                    // Update display with real-time score
+                    await displayPassport({
+                        ...currentPassport,
+                        score: realScoreData.score,
+                        achievements: realScoreData.achievements
+                    });
+                    setStatus(`✅ Score updated: ${realScoreData.score} points, ${realScoreData.achievements.length} achievements`);
+                } else {
+                    // Fallback: reload from blockchain
+                    await loadPassport();
+                }
+            } catch (error) {
+                console.error('Update error:', error);
+                showError('Update failed: ' + error.message);
+                setStatus('❌ Update failed');
+            }
+        }
+
+        // =====================================================
+        // AI SCORE FEATURE (Coming soon)
+        // =====================================================
+        function alertAIFeature() {
+            alert('🤖 AI Score feature is coming soon!\n\nThis will use AI to analyze your blockchain activity and provide personalized insights.');
+        }
+
+        // =====================================================
+        // UI HELPERS
+        // =====================================================
+        function setStatus(message) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = 'status';
+            if (message.includes('...')) {
+                statusEl.classList.add('loading-pulse');
+            }
+        }
+
+        function showError(message) {
+            const container = document.getElementById('error-container');
+            container.innerHTML = `<div class="error">❌ ${message}</div>`;
+        }
+
+        function clearError() {
+            document.getElementById('error-container').innerHTML = '';
+        }
+
+        function disableButtons() {
+            document.querySelectorAll('button').forEach(btn => btn.disabled = true);
+        }
+
+        function enableButtons() {
+            document.getElementById('mint-btn').disabled = !!currentPassport;
+            document.getElementById('update-btn').disabled = !currentPassport;
+            document.getElementById('ai-btn').disabled = true; // Always disabled for now
+        }
+
+        function formatAddress(address) {
+            if (!address) return 'N/A';
+            if (address.length <= 20) return address;
+            return address.slice(0, 12) + '...' + address.slice(-10);
+        }
+
+        function formatTokenId(idArray) {
+            if (!idArray || !Array.isArray(idArray)) return 'N/A';
+            return '0x' + idArray.map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 16) + '...';
+        }
+
+        // =====================================================
+        // INITIALIZATION
+        // =====================================================
+        async function init() {
+            console.log('Initializing Passport NFT frontend...');
+            console.log('Config:', { CHAIN_ID, APP_ID, OWNER, GRAPHQL_ENDPOINT, SCORE_API_ENDPOINT });
+
+            if (!CHAIN_ID || !APP_ID) {
+                showError('Missing required URL parameters: chainId and app');
+                setStatus('❌ Configuration error');
+                return;
+            }
+
+            if (!OWNER) {
+                showError('Missing owner parameter. Add ?owner=YOUR_ADDRESS to URL\n\nExample: ?owner=User:a2e5ed5897babe63f5220523e8502cd7093dac1972658ea29e0bac3c42aaff74');
+                setStatus('⚠️ Owner address required');
+                return;
+            }
+
+            // Load passport
+            await loadPassport();
+
+            // Auto-refresh every 15 seconds if passport exists
+            setInterval(() => {
+                if (currentPassport) {
+                    console.log('Auto-refreshing score...');
+                    updateScore();
+                }
+            }, 15000);
+        }
+
+        // Start the app
+        init();
+    </script>
+</body>
+</html>
