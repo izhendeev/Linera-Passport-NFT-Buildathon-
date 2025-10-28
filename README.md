@@ -73,16 +73,19 @@ python3 -m http.server 3000
 linera wallet show
 
 # Open in browser with all parameters
-http://localhost:3000/frontend.html?chainId=YOUR_CHAIN_ID&app=YOUR_APP_ID&owner=User:YOUR_OWNER_ADDRESS
+http://localhost:3000/frontend.html?chainId=YOUR_CHAIN_ID&app=YOUR_APP_ID&owner=YOUR_OWNER_ADDRESS
 
-# Example:
-# http://localhost:3000/frontend.html?chainId=f7ebbdd68ad4fd2daf192575ad10c27bd7089d5e0a30facaf507f9bc22b9c6fe&app=b139121af898c9bbb6dca05a7efde3ef396eeefe271650bb5659692613d4d463&owner=User:a2e5ed5897babe63f5220523e8502cd7093dac1972658ea29e0bac3c42aaff74
+# Example with 0x format:
+http://localhost:3000/frontend.html?chainId=f7ebbdd68ad4fd2daf192575ad10c27bd7089d5e0a30facaf507f9bc22b9c6fe&app=b139121af898c9bbb6dca05a7efde3ef396eeefe271650bb5659692613d4d463&owner=0x1f04fdfe3ce269ac627bf9a8ba0aa2b9d8785eca8d0575aff7c475692df1f900
+
+# Example with User: format:
+http://localhost:3000/frontend.html?owner=User:1f04fdfe3ce269ac627bf9a8ba0aa2b9d8785eca8d0575aff7c475692df1f900&chainId=f7ebbdd68ad4fd2daf192575ad10c27bd7089d5e0a30facaf507f9bc22b9c6fe&app=b139121af898c9bbb6dca05a7efde3ef396eeefe271650bb5659692613d4d463
 ```
 
 **URL Parameters:**
 - `chainId` (or `chain`) - Your operation chain ID
 - `app` (or `appId`) - Your application ID
-- `owner` - Your wallet address (format: `User:...`)
+- `owner` - Your wallet address (accepts both `0x...` or `User:...` format)
 
 ## Scoring System
 
